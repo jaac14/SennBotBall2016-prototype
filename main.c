@@ -1,10 +1,11 @@
 #include <kipr/botball.h>
 
 void drive(char direction, int speed, int time); // wait optional
-void turn(int degrees, int fullturns); // fullturns optional
+void turn(char direction, int degrees); // fullturns optional
 void serv(int port, int position);
-int get_et(int duration);
-int et_to_mm(int et_value);
+double get_et(int duration);
+double et_to_inchs(int et_value);
+int exp(int value, int times);
 void linefollow();
 
 // int i;
@@ -16,15 +17,19 @@ int mr = 0; // motor right
 
 // sensors
 
-int button = 0;
-int serv0 = 1;
-int et = 1;
-int er = 0;
+/*
+note: things that we are not using should be set to -1
+*/
+
+int button = 0; // button port
+int serv0 = 1; // servo #0 port
+int et = 1; // et port
+int er = 0; // er port
 
 int main() {
-	int speed = 1000;
-	
-  pathA = 1;
+  int speed = 1000;
+
+  /*pathA = 1;
   turnA = 1;
   pathB = 1;
   turnB = 1;
@@ -44,7 +49,7 @@ int main() {
   turnI = 1;
   pathJ = 1;
 
-  
+
   drive('f', speed, pathA);
   drive('r', speed, turnA);
   drive('f', speed, pathB);
@@ -63,10 +68,10 @@ int main() {
   drive('r', speed, turnH);
   drive('f', speed, pathI);
   drive('r', speed, turnI);
-  drive('f', speed, pathJ);
+  drive('f', speed, pathJ);*/
+
   
- 
-  
+
   return 0;
 }
 
@@ -86,6 +91,20 @@ void drive(char direction, int speed, int time) {
       mav(ml, spaad);
       mav(mr, spaad);
       break;
+    default:
+      printf("first parameter: %c is not valid", direction);
+  }
+  msleep(time);
+  ao();
+  // msleep(wait);
+}
+
+void turn(char direction, int degrees) {
+  int speed = 1000;
+  int spaad = -1 * speed; // opposite of speed
+  // printf("direction: %d\n", direction);
+  printf("speed: %d\n", speed);
+  switch(direction) {
     case 'R':
     case 'r':
       mav(ml, spaad);
@@ -99,12 +118,8 @@ void drive(char direction, int speed, int time) {
     default:
       printf("first parameter: %c is not valid", direction);
   }
-  msleep(time);
   ao();
   // msleep(wait);
-}
-
-void turn(int degrees, int fullturns) {
 }
 
 void serv(int port, int position) {
@@ -114,18 +129,29 @@ void serv(int port, int position) {
   disable_servos();
 }
 
-int get_et(int duration) {
+double get_et(int duration) {
   int i;
+  double inchs;
   for(i = 0; i < duration; i++) {
     printf("ET sensor reading is %d \n", analog(et));
-    // code to return distance from et value
+    inchs = et_to_inchs(analog(et));
     msleep(50);
   }
-  return 0;
+  return inchs;
 }
 
-int et_to_mm(int et_value) {
-  return 0;
+int exp(int value, int times) {
+  int i;
+  int result;
+  for(i = 0; i < times; i++) {
+    result = result * value;
+  }
+  return result;
+}
+
+double et_to_inchs(int et_value) {
+  double et_value_db = (-0.0001 * exp(et_value, 6)) + (0.012 * exp(et_value, 5)) - (0.4889 * exp(et_value, 4)) + (9.0176 * exp(et_value, 3)) - (61.479 * exp(et_value, 2)) - (193.11 * et_value) + (4212.8);
+  return et_value_db;
 }
 
 void linefollow() {
